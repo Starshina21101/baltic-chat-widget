@@ -132,9 +132,9 @@ const BMChat = {
         })
         .then(function(data) {
             self.hideTyping();
-            // Открытие "Загрузить файл"
+            // Чек на файл - выводим кнопку
             if (data.response && data.response.toLowerCase().includes('файл')) {
-                self.addMessage("Для загрузки файла откройте форму, нажав кнопку ниже 👇", 'bot', [
+                self.addMessage("Для загрузки файла используйте форму ниже 👇", 'bot', [
                     {title: "Загрузить файл", value: "/open_upload"}
                 ]);
             } else {
@@ -154,12 +154,28 @@ const BMChat = {
 
     sendQuickReply: function(title, value) {
         this.addMessage(title, 'user');
-        const input = document.getElementById('bmMessageInput');
+        // Открываем iframe Тильды внутри виджета
         if (value === "/open_upload") {
-            // Здесь открываем форму Тильды в новой вкладке, chat_id прокидывается!
-            window.open(`https://balt-market.site/upload?chat_id=${this.sessionId}`, '_blank');
+            const messagesContainer = document.getElementById('bmChatMessages');
+            // удаляем другие iframes если уже есть
+            const oldIframe = messagesContainer.querySelector('.bm-upload-iframe');
+            if (oldIframe) oldIframe.remove();
+
+            const uploadDiv = document.createElement('div');
+            uploadDiv.className = 'bm-upload-iframe';
+            uploadDiv.innerHTML = `
+                <iframe
+                    src="https://balt-market.site/upload?chat_id=${this.sessionId}"
+                    frameborder="0"
+                    style="width:100%;height:420px;border-radius:12px;border:1px solid #eee;background:#fff;margin-bottom:8px;"
+                    allow="camera;microphone"
+                ></iframe>
+            `;
+            messagesContainer.appendChild(uploadDiv);
+            this.scrollToBottom();
             return;
         }
+        const input = document.getElementById('bmMessageInput');
         input.value = value === 'last_message' ? this.lastUserMessage : value;
         this.sendMessage();
     },
