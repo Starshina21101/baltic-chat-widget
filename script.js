@@ -8,8 +8,9 @@ const BMChat = {
         this.loadChatHistory();
         if (!this.sessionId) {
            this.sessionId = this.generateSessionId();
-        }
-        this.setupEventListeners();
+           this.saveChatHistory(); // Принудительно сохраняем sessionId после генерации
+         }
+         this.setupEventListeners();
         this.setupIOSFixes();
         
         // Убираем статические кнопки, если они есть
@@ -347,7 +348,10 @@ const BMChat = {
                 this.sessionId = chatData.sessionId;
                 document.getElementById('bmChatMessages').innerHTML = chatData.messages;
             } catch (error) {
+                console.error("Error loading chat history:", error); // Логируем ошибку
                 localStorage.removeItem('bm_chat_history');
+                this.sessionId = this.generateSessionId(); // Генерируем новый ID при ошибке
+                this.saveChatHistory(); // Сохраняем его
             }
         }
     }
