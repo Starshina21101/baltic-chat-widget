@@ -134,8 +134,8 @@ const BMChat = {
         })
         .then(function(data) {
             self.hideTyping();
-            // Если бот говорит "Пора загружать файл" — показываем форму
-            if (data.response && (data.response.indexOf('ссылке') !== -1 || data.response.indexOf('загрузить файл') !== -1)) {
+            // -- ВНИМАНИЕ, вот здесь условие для показа формы --
+            if (data.response && data.response.toLowerCase().includes('файл')) {
                 self.addMessage(data.response, 'bot', data.quick_replies);
                 self.showFileUploadForm();
             } else {
