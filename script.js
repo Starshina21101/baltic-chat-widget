@@ -23,6 +23,13 @@ const BMChat = {
             }
             this.saveChatHistory();
         }, 1000);
+
+        // === Слушаем сигнал от iframe о загрузке файла ===
+        window.addEventListener('message', function(e) {
+            if (e.data === 'file_uploaded_successfully') {
+                BMChat.addMessage('Файл успешно загружен! Скоро с вами свяжется наш инженер.', 'bot');
+            }
+        });
     },
 
     generateSessionId: function() {
@@ -132,7 +139,6 @@ const BMChat = {
         })
         .then(function(data) {
             self.hideTyping();
-            // Чек на файл - выводим кнопку
             if (data.response && data.response.toLowerCase().includes('файл')) {
                 self.addMessage("Для загрузки файла используйте форму ниже 👇", 'bot', [
                     {title: "Загрузить файл", value: "/open_upload"}
@@ -154,7 +160,6 @@ const BMChat = {
 
     sendQuickReply: function(title, value) {
         this.addMessage(title, 'user');
-        // Открываем iframe Тильды внутри виджета
         if (value === "/open_upload") {
             const messagesContainer = document.getElementById('bmChatMessages');
             // удаляем другие iframes если уже есть
