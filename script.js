@@ -2,29 +2,96 @@ const BMChat = {
     isOpen: false,
     sessionId: null,
     currentState: null,
-    lastUserMessage: '', // Сохраняем последнее сообщение пользователя
+    lastUserMessage: '',
     webhookUrl: 'https://auto.golubef.store/webhook/chat-bm',
+    fileUploadUrl: 'https://auto.golubef.store/webhook/tilda-file-upload',
+    
     init() {
-        this.loadChatHistory();
-        if (!this.sessionId) {
-           this.sessionId = this.generateSessionId();
-           this.saveChatHistory(); // Принудительно сохраняем sessionId после генерации
-         }
-         this.setupEventListeners();
-        this.setupIOSFixes();
+        console.log('=== BMChat init started ===');
         
-        // Убираем статические кнопки, если они есть
+        // 1. КРИТИЧНО: Сначала загружаем историю (восстанавливает sessionId)
+        this.loadChatHistory();
+        
+        // 2. Если после загрузки sessionId всё равно null - генерируем новый
+        if (!this.sessionId) {
+            this.sessionId = this.generateSessionId();
+            console.log('Generated NEW sessionId:', this.sessionId);
+            this.saveChatHistory(); // Сразу сохраняем
+        } else {
+            console.log('Restored sessionId from history:', this.sessionId);
+        }
+        
+        // 3. Остальная инициализация
+        this.setupEventListeners();
+        this.setupIOSFixes();
+        this.setupFileUpload();
+        
+        // Убираем статические кнопки
         const staticReplies = document.getElementById('bmQuickReplies');
         if (staticReplies) {
             staticReplies.remove();
         }
-
-        console.log('Балт-Маркет Chat initialized:', this.sessionId);
-        console.log('Initial sessionId value:', this.sessionId);
+        
+        console.log('=== BMChat init finished. SessionId:', this.sessionId, '===');
     },
     
     generateSessionId() {
         return 'web_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    },
+    
+    setupFileUpload() {
+        // Находим форму загрузки файлов Тильды (если есть)
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.handleFileUpload(file);
+                }
+            });
+        }
+    },
+    
+    async handleFileUpload(file) {
+        console.log('File upload started:', file.name);
+        this.addMessage(`Загружаю файл: ${file.name}...`, 'user');
+        this.showTyping();
+        
+        try {
+            // Формируем данные для отправки (нужна настройка на стороне Тильды)
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('chat_id', this.sessionId);
+            
+            // ВАРИАНТ 1: Если Тильда сама загружает файл и возвращает URL
+            // Тогда отправляем через твой File-Catcher
+            const response = await fetch(this.fileUploadUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    userfile: 'URL_ФАЙЛА_ОТ_ТИЛЬДЫ', // Тильда должна вернуть URL
+                    chat_id: this.sessionId,
+                    message: `Пользователь загрузил файл: ${file.name}`
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            this.hideTyping();
+            
+            if (data.response) {
+                this.addMessage(data.response, 'bot', data.quick_replies);
+                if (data.state) this.currentState = data.state;
+            } else {
+                throw new Error('Нет ответа от сервера');
+            }
+            
+        } catch (error) {
+            console.error('File upload error:', error);
+            this.hideTyping();
+            this.addMessage('❌ Ошибка загрузки файла: ' + error.message, 'bot');
+        }
     },
     
     setupIOSFixes() {
@@ -90,7 +157,7 @@ const BMChat = {
             this.isOpen = true;
             
             const badge = document.querySelector('.bm-chat-badge');
-            badge.style.display = 'none';
+            if (badge) badge.style.display = 'none';
             
             setTimeout(() => {
                 this.scrollToBottom();
@@ -104,7 +171,7 @@ const BMChat = {
         
         if (!message) return;
         
-        this.lastUserMessage = message; // Сохраняем
+        this.lastUserMessage = message;
         this.addMessage(message, 'user');
         input.value = '';
         this.autoResize(input);
@@ -113,11 +180,16 @@ const BMChat = {
         const sendBtn = document.getElementById('bmSendBtn');
         sendBtn.disabled = true;
         
+        console.log('=== Sending message ===');
+        console.log('Message:', message);
+        console.log('SessionId:', this.sessionId);
+        console.log('State:', this.currentState);
+        
         try {
             const response = await fetch(this.webhookUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'text/plain',
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     message: message,
@@ -129,13 +201,12 @@ const BMChat = {
                 })
             });
             
-            console.log('Sending message with sessionId:', this.sessionId); // Добавляем логирование перед отправкой
-            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
+            console.log('Response from server:', data);
             this.hideTyping();
             
             if (data.response) {
@@ -145,19 +216,17 @@ const BMChat = {
                 } else {
                     this.currentState = null;
                 }
-
-
             } else {
-                this.addMessage('Извините, произошла ошибка. Попробуйте еще раз или напишите "Оператор" для связи с менеджером.', 'bot', [
-                    {title: 'Связаться с оператором', value: '/operator'},
-                    {title: 'Попробовать снова', value: 'last_message'}
-                ]);
+                throw new Error('Пустой ответ от сервера');
             }
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Send message error:', error);
             this.hideTyping();
-            this.addMessage('ОШИБКА: ' + error.message, 'bot'); // ВЫВОДИМ ОШИБКУ В ЧАТ
+            this.addMessage('❌ ОШИБКА: ' + error.message, 'bot', [
+                {title: 'Связаться с оператором', value: '/operator'},
+                {title: 'Попробовать снова', value: 'last_message'}
+            ]);
         } finally {
             sendBtn.disabled = false;
         }
@@ -168,7 +237,7 @@ const BMChat = {
     sendQuickReply(title, value) {
         this.addMessage(title, 'user');
         const input = document.getElementById('bmMessageInput');
-        input.value = value;
+        input.value = value === 'last_message' ? this.lastUserMessage : value;
         this.sendMessage();
     },
     
@@ -204,74 +273,27 @@ const BMChat = {
         
         if (sender === 'bot' && !this.isOpen) {
             const badge = document.querySelector('.bm-chat-badge');
-            badge.style.display = 'flex';
+            if (badge) badge.style.display = 'flex';
         }
     },
     
     showTyping() {
-        document.getElementById('bmTypingIndicator').style.display = 'block';
-        this.scrollToBottom();
+        const indicator = document.getElementById('bmTypingIndicator');
+        if (indicator) {
+            indicator.style.display = 'block';
+            this.scrollToBottom();
+        }
     },
     
     hideTyping() {
-        document.getElementById('bmTypingIndicator').style.display = 'none';
+        const indicator = document.getElementById('bmTypingIndicator');
+        if (indicator) indicator.style.display = 'none';
     },
     
     scrollToBottom() {
         const messages = document.getElementById('bmChatMessages');
         messages.scrollTop = messages.scrollHeight;
     },
-
-    showFallbackForm() {
-        const messagesContainer = document.getElementById('bmChatMessages');
-        const fallbackForm = document.createElement('div');
-        fallbackForm.className = 'bm-fallback-form';
-        fallbackForm.innerHTML = `
-            <input type="text" id="fallbackName" placeholder="Ваше имя">
-            <input type="text" id="fallbackContact" placeholder="Телефон или Email">
-            <textarea id="fallbackMessage" placeholder="Суть вашего вопроса..."></textarea>
-            <button onclick="BMChat.sendFallbackData()">Отправить</button>
-        `;
-        messagesContainer.appendChild(fallbackForm);
-        this.scrollToBottom();
-        
-        const regularInput = document.querySelector('.bm-chat-input');
-        if(regularInput) regularInput.style.display = 'none';
-    },
-
-    async sendFallbackData() {
-        const name = document.getElementById('fallbackName').value.trim();
-        const contact = document.getElementById('fallbackContact').value.trim();
-        const message = document.getElementById('fallbackMessage').value.trim();
-
-        if (!name || !contact || !message) {
-            alert('Пожалуйста, заполните все поля.');
-            return;
-        }
-
-        const button = document.querySelector('.bm-fallback-form button');
-        button.disabled = true;
-        button.textContent = 'Отправка...';
-
-        try {
-            await fetch(`${this.helperServiceUrl}/api/fallback-contact`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, contact, message, sessionId: this.sessionId })
-            });
-            
-            this.addMessage('✅ Спасибо! Ваша заявка принята. Мы скоро с вами свяжемся.', 'bot');
-            const fallbackForm = document.querySelector('.bm-fallback-form');
-            if (fallbackForm) fallbackForm.style.display = 'none';
-
-        } catch (error) {
-            console.error('Fallback send error:', error);
-            alert('Не удалось отправить заявку. Пожалуйста, скопируйте ваши данные и свяжитесь с нами напрямую.');
-            button.disabled = false;
-            button.textContent = 'Отправить';
-        }
-    },
-
 
     showQuickReplies(replies) {
         const messagesContainer = document.getElementById('bmChatMessages');
@@ -315,8 +337,10 @@ const BMChat = {
             `;
             
             this.sessionId = this.generateSessionId();
+            this.currentState = null;
             localStorage.removeItem('bm_chat_history');
-            this.saveChatHistory(); // Сохраняем новый sessionId сразу
+            this.saveChatHistory();
+            console.log('Chat cleared. New sessionId:', this.sessionId);
         }
     },
     
@@ -324,11 +348,13 @@ const BMChat = {
         const messages = document.getElementById('bmChatMessages').innerHTML;
         const chatData = {
             sessionId: this.sessionId,
+            currentState: this.currentState,
             messages: messages,
             timestamp: Date.now()
         };
         
         localStorage.setItem('bm_chat_history', JSON.stringify(chatData));
+        console.log('Chat history saved. SessionId:', this.sessionId);
     },
     
     loadChatHistory() {
@@ -338,21 +364,25 @@ const BMChat = {
             try {
                 const chatData = JSON.parse(savedData);
                 
+                // Проверяем срок давности (24 часа)
                 if (Date.now() - chatData.timestamp > 24 * 60 * 60 * 1000) {
+                    console.log('Chat history expired, clearing...');
                     localStorage.removeItem('bm_chat_history');
-                    this.sessionId = this.generateSessionId(); // Генерируем новый ID
-                    this.saveChatHistory(); // Сохраняем его
-                    return;
+                    return; // sessionId останется null, сгенерируется в init()
                 }
                 
+                // Восстанавливаем данные
                 this.sessionId = chatData.sessionId;
+                this.currentState = chatData.currentState || null;
                 document.getElementById('bmChatMessages').innerHTML = chatData.messages;
+                console.log('Chat history restored. SessionId:', this.sessionId);
+                
             } catch (error) {
-                console.error("Error loading chat history:", error); // Логируем ошибку
+                console.error('Error loading chat history:', error);
                 localStorage.removeItem('bm_chat_history');
-                this.sessionId = this.generateSessionId(); // Генерируем новый ID при ошибке
-                this.saveChatHistory(); // Сохраняем его
             }
+        } else {
+            console.log('No saved chat history found');
         }
     }
 };
