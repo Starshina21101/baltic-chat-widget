@@ -4,7 +4,6 @@ const BMChat = {
     currentState: null,
     lastUserMessage: '',
     webhookUrl: 'https://auto.golubef.store/webhook/chat-bm',
-    fileUploadUrl: 'https://auto.golubef.store/webhook/tilda-file-upload',
 
     init: function() {
         this.loadChatHistory();
@@ -55,19 +54,18 @@ const BMChat = {
                 self.toggle();
             }
         });
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.target.classList.contains('show')) {
-                    setTimeout(function() {
-                        const input = document.getElementById('bmMessageInput');
-                        if (input && window.innerWidth > 768) input.focus();
-                    }, 300);
-                }
-            });
-        });
         const widget = document.getElementById('bmChatWidget');
         if (widget) {
-            observer.observe(widget, {
+            new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.target.classList.contains('show')) {
+                        setTimeout(function() {
+                            const input = document.getElementById('bmMessageInput');
+                            if (input && window.innerWidth > 768) input.focus();
+                        }, 300);
+                    }
+                });
+            }).observe(widget, {
                 attributes: true,
                 attributeFilter: ['class']
             });
@@ -134,10 +132,11 @@ const BMChat = {
         })
         .then(function(data) {
             self.hideTyping();
-            // -- ВНИМАНИЕ, вот здесь условие для показа формы --
+            // Открытие "Загрузить файл"
             if (data.response && data.response.toLowerCase().includes('файл')) {
-                self.addMessage(data.response, 'bot', data.quick_replies);
-                self.showFileUploadForm();
+                self.addMessage("Для загрузки файла откройте форму, нажав кнопку ниже 👇", 'bot', [
+                    {title: "Загрузить файл", value: "/open_upload"}
+                ]);
             } else {
                 self.addMessage(data.response || 'Нет ответа', 'bot', data.quick_replies);
                 if (data.state) self.currentState = data.state;
@@ -153,74 +152,14 @@ const BMChat = {
         .finally(function() { sendBtn.disabled = false; self.saveChatHistory(); });
     },
 
-    handleFileUpload: function(file) {
-        this.addMessage('📎 Загружаю файл: ' + file.name + '...', 'user');
-        this.showTyping();
-        const self = this;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('chat_id', this.sessionId);
-
-        fetch(this.fileUploadUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-                userfile: 'URL_ОТ_ТИЛЬДЫ*', // обычно здесь реальный fileUrl! В форме заменить на file!
-                chat_id: this.sessionId,
-                message: `Пользователь загрузил файл: ${file.name}`
-            }),
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(function(response) { return response.text(); })
-        .then(function(responseText) {
-            if (!responseText || responseText.trim() === '') throw new Error('Пустой ответ от сервера');
-            let data = {};
-            try { data = JSON.parse(responseText); } catch (e) { throw new Error('Ошибка парсинга'); }
-            self.hideTyping();
-            if (data.response) {
-                self.addMessage(data.response, 'bot', data.quick_replies);
-                if (data.state) self.currentState = data.state;
-            } else {
-                self.addMessage('Файл получен, но нет ответа. Попробуйте еще раз.', 'bot');
-            }
-        })
-        .catch(function(error) {
-            self.hideTyping();
-            self.addMessage('❌ Ошибка загрузки файла: ' + error.message, 'bot');
-        });
-    },
-
-    showFileUploadForm: function(chatId) {
-        const messagesContainer = document.getElementById('bmChatMessages');
-        const prev = messagesContainer.querySelectorAll('.bm-quick-replies, .bm-upload-btn, .bm-file-form');
-        prev.forEach(x => x.remove());
-
-        const formDiv = document.createElement('div');
-        formDiv.className = 'bm-file-form';
-        formDiv.innerHTML = `
-            <form id="bmFileUploadForm" enctype="multipart/form-data" style="margin: 16px 0">
-                <input type="hidden" name="chat_id" value="${chatId || this.sessionId}">
-                <input type="file" name="userfile" required style="margin-bottom:8px;">
-                <button type="submit" style="padding: 8px 16px; background: #0088cc; color: white; border: none; border-radius: 6px;">Отправить файл</button>
-            </form>
-        `;
-        messagesContainer.appendChild(formDiv);
-
-        formDiv.querySelector('form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const fileInput = formDiv.querySelector('input[type="file"]');
-            const file = fileInput.files[0];
-            if (file) {
-                this.handleFileUpload(file);
-                formDiv.style.display = 'none';
-            }
-        });
-
-        this.scrollToBottom();
-    },
-
     sendQuickReply: function(title, value) {
         this.addMessage(title, 'user');
         const input = document.getElementById('bmMessageInput');
+        if (value === "/open_upload") {
+            // Здесь открываем форму Тильды в новой вкладке, chat_id прокидывается!
+            window.open(`https://balt-market.site/upload?chat_id=${this.sessionId}`, '_blank');
+            return;
+        }
         input.value = value === 'last_message' ? this.lastUserMessage : value;
         this.sendMessage();
     },
