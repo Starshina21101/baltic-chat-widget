@@ -6,7 +6,7 @@ const BMChat = {
     currentState: null,
     lastUserMessage: '', // Сохраняем последнее сообщение пользователя
     webhookUrl: 'https://auto.golubef.store/webhook/chat-bm',
-    helperServiceUrl: 'https://baltic-chat-helper.starshina21101.workers.dev', // ЗАМЕНИТЬ НА URL СЕРВИСА-ПОМОЩНИКА
+    signatureGeneratorUrl: 'https://auto.golubef.store/webhook/generate-upload-signature', // URL нового воркфлоу
     
     init() {
         this.sessionId = this.generateSessionId();
@@ -283,11 +283,7 @@ const BMChat = {
         this.addMessage("Одну минуту, готовлю безопасную форму для загрузки...", "bot");
         
         try {
-            const response = await fetch(`${this.helperServiceUrl}/api/generate-signature`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: this.sessionId })
-            });
+            const response = await fetch(this.signatureGeneratorUrl);
 
             if (!response.ok) throw new Error('Signature generation failed');
             
@@ -314,22 +310,12 @@ const BMChat = {
 
                 widget.onDone((fileInfo) => {
                     console.log('File uploaded:', fileInfo.cdnUrl);
-                    this.addMessage(`✅ Файл принят: ${fileInfo.name}.<br>Менеджер скоро его изучит.`, 'bot');
+                    this.addMessage(`✅ Файл ${fileInfo.name} принят. Отправляю его на анализ.`, 'user');
                     
-                    fetch('https://auto.golubef.store/webhook/file-upload-bm', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sessionId: this.sessionId,
-                            firstname: 'Посетитель',
-                            file: fileInfo.originalUrl,
-                            fileName: fileInfo.name,
-                            fileSize: fileInfo.size,
-                            fileMime: fileInfo.mimeType
-                        })
-                    }).catch(err => console.error('File upload notification failed', err));
-
-                    this.saveChatHistory();
+                    // Отправляем File UUID в основной чат как обычное сообщение
+                    const input = document.getElementById('bmMessageInput');
+                    input.value = `[file-uuid]${fileInfo.uuid}`;
+                    this.sendMessage();
                 });
             };
 
