@@ -440,5 +440,4 @@ const BMChat = {
 document.addEventListener('DOMContentLoaded', function() {
     BMChat.init();
 });
-
 window.BMChat = BMChat;
