@@ -6,7 +6,7 @@ const BMChat = {
     currentState: null,
     lastUserMessage: '', // Сохраняем последнее сообщение пользователя
     webhookUrl: 'https://auto.golubef.store/webhook/chat-bm',
-    helperServiceUrl: 'https://baltic-chat-helper.starshina21101.workers.dev', // ЗАМЕНИТЬ НА URL СЕРВИСА-ПОМОЩНИКА
+    signatureGeneratorUrl: 'https://auto.golubef.store/webhook/generate-upload-signature', // URL нового воркфлоу
     
     init() {
         this.sessionId = this.generateSessionId();
@@ -158,8 +158,7 @@ const BMChat = {
         } catch (error) {
             console.error('Error:', error);
             this.hideTyping();
-            this.addMessage('Возникли временные неполадки. Пожалуйста, оставьте ваши контакты, и мы свяжемся с вами в ближайшее время.', 'bot');
-            this.showFallbackForm();
+            this.addMessage('ОШИБКА: ' + error.message, 'bot'); // ВЫВОДИМ ОШИБКУ В ЧАТ
         } finally {
             sendBtn.disabled = false;
         }
@@ -283,10 +282,10 @@ const BMChat = {
         this.addMessage("Одну минуту, готовлю безопасную форму для загрузки...", "bot");
         
         try {
-            const response = await fetch(`${this.helperServiceUrl}/api/generate-signature`, {
+            const response = await fetch(this.signatureGeneratorUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: this.sessionId })
+                body: JSON.stringify({}) // Отправляем пустой объект
             });
 
             if (!response.ok) throw new Error('Signature generation failed');
@@ -304,6 +303,10 @@ const BMChat = {
             `;
         
             uploadButton.onclick = () => {
+                if (typeof uploadcare === 'undefined') {
+                    this.addMessage('Ошибка: библиотека загрузки не найдена. Пожалуйста, обновите страницу.', 'bot');
+                    return;
+                }
                 const widget = uploadcare.openDialog(null, {
                     publicKey: window.UPLOADCARE_PUBLIC_KEY,
                     secureSignature: signature,
@@ -314,22 +317,12 @@ const BMChat = {
 
                 widget.onDone((fileInfo) => {
                     console.log('File uploaded:', fileInfo.cdnUrl);
-                    this.addMessage(`✅ Файл принят: ${fileInfo.name}.<br>Менеджер скоро его изучит.`, 'bot');
+                    this.addMessage(`✅ Файл ${fileInfo.name} принят. Отправляю его на анализ.`, 'user');
                     
-                    fetch('https://auto.golubef.store/webhook/file-upload-bm', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sessionId: this.sessionId,
-                            firstname: 'Посетитель',
-                            file: fileInfo.originalUrl,
-                            fileName: fileInfo.name,
-                            fileSize: fileInfo.size,
-                            fileMime: fileInfo.mimeType
-                        })
-                    }).catch(err => console.error('File upload notification failed', err));
-
-                    this.saveChatHistory();
+                    // Отправляем File UUID в основной чат как обычное сообщение
+                    const input = document.getElementById('bmMessageInput');
+                    input.value = `[file-uuid]${fileInfo.uuid}`;
+                    this.sendMessage();
                 });
             };
 
