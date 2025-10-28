@@ -519,37 +519,18 @@ body {
     cursor: pointer;
 }
 
-/* Форма отправки файла внутри чата */
-.bm-file-form {
-    padding: 12px;
-    background: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 1px 5px rgba(50,50,80,0.07);
-    margin-bottom: 12px;
+/* Форма загрузки Тильды через iframe внутри чата */
+.bm-upload-iframe {
+    padding: 10px 0;
+    text-align: center;
+}
+.bm-upload-iframe iframe {
+    width: 100%;
+    min-height: 420px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    background: #fff;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 14px rgba(34,60,100,0.05);
 }
 
-.bm-file-form form {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.bm-file-form input[type="file"] {
-    margin-bottom: 12px;
-}
-
-.bm-file-form button {
-    padding: 10px 16px;
-    background: #0088cc;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.bm-file-form button:hover {
-    background: #005f8a;
-}
