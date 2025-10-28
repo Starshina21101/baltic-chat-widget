@@ -303,6 +303,10 @@ const BMChat = {
             `;
         
             uploadButton.onclick = () => {
+                if (typeof uploadcare === 'undefined') {
+                    this.addMessage('Ошибка: библиотека загрузки не найдена. Пожалуйста, обновите страницу.', 'bot');
+                    return;
+                }
                 const widget = uploadcare.openDialog(null, {
                     publicKey: window.UPLOADCARE_PUBLIC_KEY,
                     secureSignature: signature,
