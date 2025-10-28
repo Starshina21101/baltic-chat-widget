@@ -337,6 +337,8 @@ const BMChat = {
                 
                 if (Date.now() - chatData.timestamp > 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('bm_chat_history');
+                    this.sessionId = this.generateSessionId(); // Генерируем новый ID
+                    this.saveChatHistory(); // Сохраняем его
                     return;
                 }
                 
