@@ -1,5 +1,3 @@
-window.UPLOADCARE_PUBLIC_KEY = '0d76bab722abb5dd06ee';
-
 const BMChat = {
     isOpen: false,
     sessionId: null,
