@@ -282,7 +282,11 @@ const BMChat = {
         this.addMessage("Одну минуту, готовлю безопасную форму для загрузки...", "bot");
         
         try {
-            const response = await fetch(this.signatureGeneratorUrl, { method: 'GET' });
+            const response = await fetch(this.signatureGeneratorUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}) // Отправляем пустой объект
+            });
 
             if (!response.ok) throw new Error('Signature generation failed');
             
