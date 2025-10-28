@@ -158,8 +158,7 @@ const BMChat = {
         } catch (error) {
             console.error('Error:', error);
             this.hideTyping();
-            this.addMessage('Возникли временные неполадки. Пожалуйста, оставьте ваши контакты, и мы свяжемся с вами в ближайшее время.', 'bot');
-            this.showFallbackForm();
+            this.addMessage('ОШИБКА: ' + error.message, 'bot'); // ВЫВОДИМ ОШИБКУ В ЧАТ
         } finally {
             sendBtn.disabled = false;
         }
@@ -283,7 +282,7 @@ const BMChat = {
         this.addMessage("Одну минуту, готовлю безопасную форму для загрузки...", "bot");
         
         try {
-            const response = await fetch(this.signatureGeneratorUrl);
+            const response = await fetch(this.signatureGeneratorUrl, { method: 'GET' });
 
             if (!response.ok) throw new Error('Signature generation failed');
             
