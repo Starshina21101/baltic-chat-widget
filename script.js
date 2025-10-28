@@ -1,16 +1,14 @@
-window.UPLOADCARE_PUBLIC_KEY = '0d76bab722abb5dd06ee';
-
 const BMChat = {
     isOpen: false,
     sessionId: null,
     currentState: null,
     lastUserMessage: '', // Сохраняем последнее сообщение пользователя
     webhookUrl: 'https://auto.golubef.store/webhook/chat-bm',
-    signatureGeneratorUrl: 'https://auto.golubef.store/webhook/generate-upload-signature', // URL нового воркфлоу
-    
     init() {
-        this.sessionId = this.generateSessionId();
         this.loadChatHistory();
+        if (!this.sessionId) {
+           this.sessionId = this.generateSessionId();
+        }
         this.setupEventListeners();
         this.setupIOSFixes();
         
@@ -21,6 +19,7 @@ const BMChat = {
         }
 
         console.log('Балт-Маркет Chat initialized:', this.sessionId);
+        console.log('Initial sessionId value:', this.sessionId);
     },
     
     generateSessionId() {
@@ -117,7 +116,7 @@ const BMChat = {
             const response = await fetch(this.webhookUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
                 body: JSON.stringify({
                     message: message,
@@ -128,6 +127,8 @@ const BMChat = {
                     timestamp: new Date().toISOString()
                 })
             });
+            
+            console.log('Sending message with sessionId:', this.sessionId); // Добавляем логирование перед отправкой
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -144,9 +145,6 @@ const BMChat = {
                     this.currentState = null;
                 }
 
-                if (message.toLowerCase().includes('/файл')) {
-                   this.showUploadButton();
-                }
 
             } else {
                 this.addMessage('Извините, произошла ошибка. Попробуйте еще раз или напишите "Оператор" для связи с менеджером.', 'bot', [
@@ -167,11 +165,6 @@ const BMChat = {
     },
 
     sendQuickReply(title, value) {
-        if (value === 'upload_file') {
-            this.addMessage(title, 'user');
-            this.showUploadButton();
-            return;
-        }
         this.addMessage(title, 'user');
         const input = document.getElementById('bmMessageInput');
         input.value = value;
@@ -278,62 +271,6 @@ const BMChat = {
         }
     },
 
-    async showUploadButton() {
-        this.addMessage("Одну минуту, готовлю безопасную форму для загрузки...", "bot");
-        
-        try {
-            const response = await fetch(this.signatureGeneratorUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}) // Отправляем пустой объект
-            });
-
-            if (!response.ok) throw new Error('Signature generation failed');
-            
-            const { signature, expire } = await response.json();
-
-            const messagesContainer = document.getElementById('bmChatMessages');
-            const uploadButton = document.createElement('button');
-            uploadButton.className = 'bm-upload-btn';
-            uploadButton.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
-                </svg>
-                <span>Прикрепить файл</span>
-            `;
-        
-            uploadButton.onclick = () => {
-                if (typeof uploadcare === 'undefined') {
-                    this.addMessage('Ошибка: библиотека загрузки не найдена. Пожалуйста, обновите страницу.', 'bot');
-                    return;
-                }
-                const widget = uploadcare.openDialog(null, {
-                    publicKey: window.UPLOADCARE_PUBLIC_KEY,
-                    secureSignature: signature,
-                    secureExpire: expire,
-                    imagesOnly: false,
-                    tabs: 'file url'
-                });
-
-                widget.onDone((fileInfo) => {
-                    console.log('File uploaded:', fileInfo.cdnUrl);
-                    this.addMessage(`✅ Файл ${fileInfo.name} принят. Отправляю его на анализ.`, 'user');
-                    
-                    // Отправляем File UUID в основной чат как обычное сообщение
-                    const input = document.getElementById('bmMessageInput');
-                    input.value = `[file-uuid]${fileInfo.uuid}`;
-                    this.sendMessage();
-                });
-            };
-
-            messagesContainer.appendChild(uploadButton);
-            this.scrollToBottom();
-
-        } catch (error) {
-            console.error('Upload button error:', error);
-            this.addMessage('Не удалось открыть форму загрузки. Пожалуйста, попробуйте позже.', 'bot');
-        }
-    },
 
     showQuickReplies(replies) {
         const messagesContainer = document.getElementById('bmChatMessages');
@@ -349,7 +286,6 @@ const BMChat = {
             button.onclick = () => this.sendQuickReply(reply.title, value);
             repliesContainer.appendChild(button);
         });
-
         messagesContainer.appendChild(repliesContainer);
         this.scrollToBottom();
     },
@@ -379,6 +315,7 @@ const BMChat = {
             
             this.sessionId = this.generateSessionId();
             localStorage.removeItem('bm_chat_history');
+            this.saveChatHistory(); // Сохраняем новый sessionId сразу
         }
     },
     
@@ -402,6 +339,8 @@ const BMChat = {
                 
                 if (Date.now() - chatData.timestamp > 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('bm_chat_history');
+                    this.sessionId = this.generateSessionId(); // Генерируем новый ID
+                    this.saveChatHistory(); // Сохраняем его
                     return;
                 }
                 
