@@ -313,6 +313,7 @@ const BMChat = {
             
             this.sessionId = this.generateSessionId();
             localStorage.removeItem('bm_chat_history');
+            this.saveChatHistory(); // Сохраняем новый sessionId сразу
         }
     },
     
