@@ -13,29 +13,27 @@ const BMChat = {
         }
         this.setupEventListeners();
         this.setupIOSFixes();
-
-        // ПИН кнопок
-        this.pinHotButtons();
-
         const staticReplies = document.getElementById('bmQuickReplies');
         if (staticReplies) staticReplies.remove();
-
         setTimeout(() => {
             if (!this.sessionId) {
                 this.sessionId = this.generateSessionId();
             }
             this.saveChatHistory();
         }, 1000);
+
+        // Вставляем горячие кнопки СНИЗУ
+        this.pinHotButtonsBottom();
     },
 
-    pinHotButtons: function() {
-        let pinned = document.getElementById('bm-hot-buttons');
+    pinHotButtonsBottom: function() {
+        let pinned = document.getElementById('bm-hot-buttons-bottom');
         if (pinned) pinned.remove();
 
         pinned = document.createElement('div');
-        pinned.id = 'bm-hot-buttons';
-        pinned.style.cssText =
-            'display:flex;gap:8px;position:sticky;top:0;width:100%;background:#fff;z-index:999;padding:12px;justify-content:center;border-bottom:1px solid #eee;';
+        pinned.id = 'bm-hot-buttons-bottom';
+        pinned.style.cssText = 'display:flex;gap:8px;width:100%;padding:10px 0 6px 0;justify-content:center;background:#fff;';
+
         [
             { title: "Заявка", value: "/request" },
             { title: "Оператор", value: "/operator" },
@@ -47,8 +45,12 @@ const BMChat = {
             btn.onclick = () => BMChat.sendQuickReply(qr.title, qr.value);
             pinned.appendChild(btn);
         });
-        let chatMessages = document.getElementById('bmChatMessages');
-        if (chatMessages) chatMessages.prepend(pinned);
+
+        // Вставить перед input (перед контейнером поля ввода)
+        let inputBox = document.getElementById('bmMessageInput');
+        if (inputBox && inputBox.parentElement && inputBox.parentElement.parentElement) {
+            inputBox.parentElement.parentElement.insertBefore(pinned, inputBox.parentElement);
+        }
     },
 
     generateSessionId: function() {
@@ -261,7 +263,7 @@ const BMChat = {
             this.currentState = null;
             localStorage.removeItem('bm_chat_history');
             this.saveChatHistory();
-            this.pinHotButtons(); // возвращаем кнопки после очистки
+            this.pinHotButtonsBottom(); // вернуть кнопки после очистки
         }
     },
 
