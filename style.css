@@ -519,42 +519,62 @@ body {
     cursor: pointer;
 }
 
-/* Форма загрузки Тильды через iframe внутри чата */
-.bm-upload-iframe {
-    padding: 10px 0;
-    text-align: center;
-}
-.bm-upload-iframe iframe {
-    width: 100%;
-    min-height: 420px;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    background: #fff;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 14px rgba(34,60,100,0.05);
+/* Форма отправки файла внутри чата */
+.bm-file-form {
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 1px 5px rgba(50,50,80,0.07);
+    margin-bottom: 12px;
 }
 
-.bm-hot-btn {
-    padding: 8px 18px;
-    margin: 0 2px;
+.bm-file-form form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.bm-file-form input[type="file"] {
+    margin-bottom: 12px;
+}
+
+.bm-file-form button {
+    padding: 10px 16px;
+    background: #0088cc;
+    color: white;
     border: none;
-    background: #009999;
-    color: #fff;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: bold;
+    border-radius: 6px;
     font-size: 15px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.045);
-    transition: background 0.2s, box-shadow 0.2s;
-}
-.bm-hot-btn:hover {
-    background: #007777;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.07);
-}
-#bm-hot-buttons-bottom {
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
-    border-top: 1px solid #efefef;
-    background: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
+.bm-file-form button:hover {
+    background: #005f8a;
+}
 
+/* Горячие кнопки */
+.bm-hot-keys {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 12px;
+    background: white;
+}
+
+.bm-hot-keys button {
+    background: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #e0e0e0;
+    border-radius: 18px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bm-hot-keys button:hover {
+    background: #e8eaed;
+    border-color: #dcdcdc;
+}
