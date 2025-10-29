@@ -14,6 +14,9 @@ const BMChat = {
         this.setupEventListeners();
         this.setupIOSFixes();
 
+        // ПИН кнопок
+        this.pinHotButtons();
+
         const staticReplies = document.getElementById('bmQuickReplies');
         if (staticReplies) staticReplies.remove();
 
@@ -23,13 +26,29 @@ const BMChat = {
             }
             this.saveChatHistory();
         }, 1000);
+    },
 
-        // === Слушаем сигнал от iframe о загрузке файла ===
-        window.addEventListener('message', function(e) {
-            if (e.data === 'file_uploaded_successfully') {
-                BMChat.addMessage('Файл успешно загружен! Скоро с вами свяжется наш инженер.', 'bot');
-            }
+    pinHotButtons: function() {
+        let pinned = document.getElementById('bm-hot-buttons');
+        if (pinned) pinned.remove();
+
+        pinned = document.createElement('div');
+        pinned.id = 'bm-hot-buttons';
+        pinned.style.cssText =
+            'display:flex;gap:8px;position:sticky;top:0;width:100%;background:#fff;z-index:999;padding:12px;justify-content:center;border-bottom:1px solid #eee;';
+        [
+            { title: "Заявка", value: "/request" },
+            { title: "Оператор", value: "/operator" },
+            { title: "Файл", value: "/open_upload" }
+        ].forEach(qr => {
+            let btn = document.createElement('button');
+            btn.textContent = qr.title;
+            btn.className = 'bm-hot-btn';
+            btn.onclick = () => BMChat.sendQuickReply(qr.title, qr.value);
+            pinned.appendChild(btn);
         });
+        let chatMessages = document.getElementById('bmChatMessages');
+        if (chatMessages) chatMessages.prepend(pinned);
     },
 
     generateSessionId: function() {
@@ -162,19 +181,14 @@ const BMChat = {
         this.addMessage(title, 'user');
         if (value === "/open_upload") {
             const messagesContainer = document.getElementById('bmChatMessages');
-            // удаляем другие iframes если уже есть
             const oldIframe = messagesContainer.querySelector('.bm-upload-iframe');
             if (oldIframe) oldIframe.remove();
 
             const uploadDiv = document.createElement('div');
             uploadDiv.className = 'bm-upload-iframe';
             uploadDiv.innerHTML = `
-                <iframe
-                    src="https://balt-market.site/upload?chat_id=${this.sessionId}"
-                    frameborder="0"
-                    style="width:100%;height:420px;border-radius:12px;border:1px solid #eee;background:#fff;margin-bottom:8px;"
-                    allow="camera;microphone"
-                ></iframe>
+                <iframe src="https://balt-market.site/upload?chat_id=${this.sessionId}" frameborder="0"
+                style="width:100%;height:420px;border-radius:12px;border:1px solid #eee;background:#fff;margin-bottom:8px;" allow="camera;microphone"></iframe>
             `;
             messagesContainer.appendChild(uploadDiv);
             this.scrollToBottom();
@@ -247,6 +261,7 @@ const BMChat = {
             this.currentState = null;
             localStorage.removeItem('bm_chat_history');
             this.saveChatHistory();
+            this.pinHotButtons(); // возвращаем кнопки после очистки
         }
     },
 
