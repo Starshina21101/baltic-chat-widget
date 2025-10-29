@@ -13,17 +13,12 @@ const BMChat = {
         }
         this.setupEventListeners();
         this.setupIOSFixes();
-        const staticReplies = document.getElementById('bmQuickReplies');
-        if (staticReplies) staticReplies.remove();
         setTimeout(() => {
             if (!this.sessionId) {
                 this.sessionId = this.generateSessionId();
             }
             this.saveChatHistory();
         }, 1000);
-
-        // Вставляем горячие кнопки СНИЗУ
-        this.pinHotButtonsBottom();
     },
 
     pinHotButtonsBottom: function() {
@@ -46,7 +41,6 @@ const BMChat = {
             pinned.appendChild(btn);
         });
 
-        // Вставить перед input (перед контейнером поля ввода)
         let inputBox = document.getElementById('bmMessageInput');
         if (inputBox && inputBox.parentElement && inputBox.parentElement.parentElement) {
             inputBox.parentElement.parentElement.insertBefore(pinned, inputBox.parentElement);
@@ -82,6 +76,16 @@ const BMChat = {
                 self.toggle();
             }
         });
+        // Enter по input
+        const input = document.getElementById('bmMessageInput');
+        if(input) {
+            input.addEventListener('keydown', function(e){
+                if(e.key === 'Enter' && !e.shiftKey){
+                    e.preventDefault();
+                    BMChat.sendMessage();
+                }
+            });
+        }
         const widget = document.getElementById('bmChatWidget');
         if (widget) {
             new MutationObserver(function(mutations) {
@@ -133,7 +137,7 @@ const BMChat = {
         this.autoResize(input);
         this.showTyping();
         const sendBtn = document.getElementById('bmSendBtn');
-        sendBtn.disabled = true;
+        if(sendBtn) sendBtn.disabled = true;
 
         const self = this;
         const requestBody = {
@@ -176,7 +180,7 @@ const BMChat = {
                 {title: 'Оператор', value: '/operator'}
             ]);
         })
-        .finally(function() { sendBtn.disabled = false; self.saveChatHistory(); });
+        .finally(function() { if(sendBtn) sendBtn.disabled = false; self.saveChatHistory(); });
     },
 
     sendQuickReply: function(title, value) {
@@ -263,7 +267,7 @@ const BMChat = {
             this.currentState = null;
             localStorage.removeItem('bm_chat_history');
             this.saveChatHistory();
-            this.pinHotButtonsBottom(); // вернуть кнопки после очистки
+            this.pinHotButtonsBottom();
         }
     },
 
@@ -281,6 +285,7 @@ const BMChat = {
 
     loadChatHistory: function() {
         const savedData = localStorage.getItem('bm_chat_history');
+        const messagesContainer = document.getElementById('bmChatMessages');
         if (savedData) {
             try {
                 const chatData = JSON.parse(savedData);
@@ -290,9 +295,14 @@ const BMChat = {
                 }
                 this.sessionId = chatData.sessionId;
                 this.currentState = chatData.currentState || null;
-                const messagesContainer = document.getElementById('bmChatMessages');
                 if (messagesContainer && chatData.messages) messagesContainer.innerHTML = chatData.messages;
             } catch (error) { localStorage.removeItem('bm_chat_history'); }
+        } else {
+            // Если истории нет — вставляем приветствие и ПРИКРЕПЛЯЕМ кнопки
+            if (messagesContainer) {
+                messagesContainer.innerHTML = `<div class="bm-message bot"><div class="bm-message-content">Приветствую! Я Балтик, цифровой снабженец 'Балт-Маркет'.<br><br>Задайте вопрос или используйте команды:<br>\`/заявка\` - для запроса КП<br>\`/оператор\` - для связи с инженером<br>\`/файл\` - чтобы прикрепить спецификацию</div></div>`;
+            }
+            this.pinHotButtonsBottom();
         }
     }
 };
