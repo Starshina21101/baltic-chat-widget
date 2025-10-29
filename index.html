@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="style.css">
-    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
+    <title>BMChat Widget</title>
 </head>
 <body>
-    <!-- Кнопка чата -->
+    <!-- Кнопка открытия чата -->
     <div class="bm-chat-button" onclick="BMChat.toggle()">
         <svg viewBox="0 0 24 24">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Окно чата -->
-    <div class="bm-chat-widget" id="bmChatWidget">
+    <div class="bm-chat-widget" id="bmChatWidget" style="display: none;">
         <!-- Заголовок -->
         <div class="bm-chat-header">
             <div>
@@ -25,42 +25,26 @@
             </div>
             <div class="bm-chat-controls">
                 <button class="bm-control-btn" onclick="BMChat.clearChat()" title="Очистить чат">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M6 7h12l-1.5 9c-.1.7-.8 1.2-1.5 1.2H9c-.7 0-1.4-.5-1.5-1.2L6 7zm3-3V3c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1h4v2H5V4h4zm-1 4v6h2V8H8zm4 0v6h2V8h-2z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24"><path d="M6 7h12l-1.5 9c-.1.7-.8 1.2-1.5 1.2H9c-.7 0-1.4-.5-1.5-1.2L6 7zm3-3V3c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1h4v2H5V4h4zm-1 4v6h2V8H8zm4 0v6h2V8h-2z"/></svg>
                 </button>
                 <button class="bm-control-btn" onclick="BMChat.toggle()" title="Закрыть">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
             </div>
         </div>
 
         <!-- Сообщения -->
-        <div class="bm-chat-messages" id="bmChatMessages">
-            <div class="bm-message bot">
-                <div class="bm-message-content">
-                    Приветствую! Я Балтик, цифровой снабженец 'Балт-Маркет'.<br><br>
-                    Задайте вопрос или используйте команды:<br>
-                    `/заявка` - для запроса КП<br>
-                    `/оператор` - для связи с инженером<br>
-                    `/файл` - чтобы прикрепить спецификацию
-                </div>
-            </div>
-        </div>
+        <div class="bm-chat-messages" id="bmChatMessages"></div>
 
         <!-- Индикатор печати -->
-        <div class="bm-typing-indicator" id="bmTypingIndicator">
+        <div class="bm-typing-indicator" id="bmTypingIndicator" style="display:none;">
             Балтик печатает
             <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
             </div>
         </div>
 
-        <!-- Ввод -->
+        <!-- Ввод (textarea + кнопка отправки) -->
         <div class="bm-chat-input">
             <div class="bm-input-group">
                 <textarea
@@ -68,7 +52,6 @@
                     id="bmMessageInput"
                     placeholder="Ваш вопрос..."
                     rows="1"
-                    onkeypress="BMChat.handleKeyPress(event)"
                     oninput="BMChat.autoResize(this)"
                 ></textarea>
                 <button class="bm-send-btn" onclick="BMChat.sendMessage()" id="bmSendBtn">
