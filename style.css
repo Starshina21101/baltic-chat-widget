@@ -544,7 +544,17 @@ body {
     cursor: pointer;
     font-weight: bold;
     font-size: 15px;
-    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.045);
+    transition: background 0.2s, box-shadow 0.2s;
 }
-.bm-hot-btn:hover { background: #007777; }
+.bm-hot-btn:hover {
+    background: #007777;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+}
+#bm-hot-buttons-bottom {
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+    border-top: 1px solid #efefef;
+    background: #fff;
+}
+
 
