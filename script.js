@@ -1,3 +1,18 @@
+// Функция конвертации Markdown (ссылки и фото) в HTML
+function markdownToHtml(md) {
+    // Рендер картинок ![Фото](url)
+    md = md.replace(/\!\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, '<img src="$2" alt="$1" style="max-width:200px; display:block; margin:6px 0;">');
+    // Рендер ссылок [ссылка](url)
+    md = md.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // Жирный **текст**
+    md = md.replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>');
+    // Курсив *текст*
+    md = md.replace(/\*([^\*]+)\*/g, '<i>$1</i>');
+    // Переводы строк
+    md = md.replace(/\n/g, '<br>');
+    return md;
+}
+
 const BMChat = {
     isOpen: false,
     sessionId: null,
@@ -194,7 +209,8 @@ const BMChat = {
         messageDiv.className = 'bm-message ' + sender;
         const now = new Date();
         const timeStr = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-        messageDiv.innerHTML = `<div class="bm-message-content">${content.replace(/\n/g, '<br>')}<div class="bm-message-time">${timeStr}</div></div>`;
+        // 👉 вот тут markdownToHtml!
+        messageDiv.innerHTML = `<div class="bm-message-content">${markdownToHtml(content)}<div class="bm-message-time">${timeStr}</div></div>`;
         messagesContainer.appendChild(messageDiv);
         if (quickReplies && quickReplies.length > 0) this.showQuickReplies(quickReplies);
         this.scrollToBottom();
@@ -258,9 +274,7 @@ const BMChat = {
         const messages = [];
         messagesContainer.querySelectorAll('.bm-message').forEach(el => {
             const contentEl = el.querySelector('.bm-message-content');
-            // Пропускаем приветственное сообщение, чтобы оно не дублировалось
             if (contentEl.innerHTML.includes("Приветствую! Я Балтик")) return;
-
             messages.push({
                 sender: el.classList.contains('user') ? 'user' : 'bot',
                 content: contentEl.innerHTML,
@@ -287,7 +301,6 @@ const BMChat = {
         try {
             const chatData = JSON.parse(savedData);
 
-            // Если история старше 24 часов, чистим ее
             if (Date.now() - chatData.timestamp > 24 * 60 * 60 * 1000) {
                 localStorage.removeItem('bm_chat_history');
                 return;
@@ -298,17 +311,14 @@ const BMChat = {
 
             if (chatData.messages && chatData.messages.length > 0) {
                 const messagesContainer = document.getElementById('bmChatMessages');
-                // Очищаем от стандартного приветствия перед загрузкой истории
                 messagesContainer.innerHTML = '';
                 chatData.messages.forEach(msg => {
-                    // Используем существующую функцию, чтобы не дублировать код
-                    // addMessage сама добавит сообщение в контейнер
                     const messageDiv = document.createElement('div');
                     messageDiv.className = 'bm-message ' + msg.sender;
                     messageDiv.innerHTML = `<div class="bm-message-content">${msg.content}</div>`;
                     messagesContainer.appendChild(messageDiv);
                 });
-                 this.scrollToBottom();
+                this.scrollToBottom();
             }
         } catch (e) {
             console.error("Failed to load chat history:", e);
