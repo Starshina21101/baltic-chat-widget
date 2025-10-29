@@ -563,10 +563,10 @@ body {
 }
 
 .bm-hot-keys button {
-    background: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #e0e0e0;
-    border-radius: 18px;
+    background: #e8f0fe;
+    color: #1967d2;
+    border: 1px solid #d2e3fc;
+    border-radius: 16px;
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 500;
@@ -575,6 +575,5 @@ body {
 }
 
 .bm-hot-keys button:hover {
-    background: #e8eaed;
-    border-color: #dcdcdc;
+    background: #d2e3fc;
 }
