@@ -110,6 +110,12 @@ const BMChat = {
         }
     },
 
+    open: function() {
+        if (!this.isOpen) {
+            this.toggle();
+        }
+    },
+
     sendMessage: function() {
         const input = document.getElementById('bmMessageInput');
         const message = input.value.trim();
