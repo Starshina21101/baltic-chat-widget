@@ -577,3 +577,23 @@ body {
 .bm-hot-keys button:hover {
     background: #d2e3fc;
 }
+
+/* Подпись */
+.bm-chat-footer {
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    background: #fafbfc;
+    border-top: 1px solid #e8eaed;
+}
+
+.bm-chat-footer a {
+    color: #0088cc;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.bm-chat-footer a:hover {
+    text-decoration: underline;
+}
