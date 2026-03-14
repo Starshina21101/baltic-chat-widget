@@ -192,7 +192,7 @@ const BMChat = {
             uploadDiv.className = 'bm-upload-iframe';
             uploadDiv.innerHTML = `
                 <iframe
-                    src="https://balt-market.site/upload?chat_id=${this.sessionId}"
+                    src="https://balt-market.ru/upload?chat_id=${this.sessionId}"
                     frameborder="0"
                     style="width:100%;height:420px;border-radius:12px;border:1px solid #eee;background:#fff;margin-bottom:8px;"
                     allow="camera;microphone"
