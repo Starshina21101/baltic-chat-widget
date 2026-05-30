@@ -28,6 +28,9 @@ const BMChat = {
         }
         this.setupEventListeners();
         this.setupIOSFixes();
+        this.setStatus(true);          // 24/7 онлайн по умолчанию
+        this.checkHealth();            // красный только если бэк реально лёг
+        setInterval(() => this.checkHealth(), 45000);
 
         const staticReplies = document.getElementById('bmQuickReplies');
         if (staticReplies) staticReplies.remove();
@@ -37,6 +40,22 @@ const BMChat = {
                 this.sessionId = this.generateSessionId();
             }
         }, 1000);
+    },
+
+    setStatus: function(online) {
+        const txt = document.getElementById('bmStatusText');
+        if (txt) txt.textContent = online ? 'Онлайн · ответим за 5 минут' : 'Связь прервана · уже чиним';
+        ['bmOnlineDot', 'bmFabDot'].forEach(function(id) {
+            const d = document.getElementById(id);
+            if (d) d.classList.toggle('off', !online);
+        });
+    },
+
+    checkHealth: function() {
+        const self = this;
+        fetch('https://auto.golubef.store/healthz', { mode: 'no-cors', cache: 'no-store' })
+            .then(function() { self.setStatus(true); })
+            .catch(function() { self.setStatus(false); });
     },
 
     generateSessionId: function() {
@@ -159,6 +178,7 @@ const BMChat = {
         })
         .then(function(data) {
             self.hideTyping();
+            self.setStatus(true);
             // Чек на файл - выводим кнопку
             if (data.response && data.response.toLowerCase().includes('файл')) {
                 self.addMessage("Отлично! Понимаем, что вы настроены серьезно. Для подготовки КП или счета, пожалуйста, загрузите заявку и реквизиты — нажмите загрузить файл 👇", 'bot', [
@@ -171,6 +191,7 @@ const BMChat = {
         })
         .catch(function(error) {
             self.hideTyping();
+            self.setStatus(false);
             self.addMessage('❌ ОШИБКА: ' + error.message, 'bot', [
                 {title: 'Попробовать снова', value: 'last_message'},
                 {title: 'Оператор', value: '/operator'}

@@ -1,39 +1,40 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="style.css">
-    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
 </head>
 <body>
     <!-- Кнопка чата -->
-    <div class="bm-chat-button" onclick="BMChat.toggle()">
-        <svg viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-        </svg>
+    <div class="bm-chat-button" onclick="BMChat.toggle()" role="button" aria-label="Открыть чат с Балтиком" tabindex="0">
+        <img src="palych.jpg" alt="Открыть чат с Балтиком">
+        <span class="bm-fab-dot" id="bmFabDot"></span>
         <div class="bm-chat-badge" style="display: none;">1</div>
     </div>
 
     <!-- Окно чата -->
-    <div class="bm-chat-widget" id="bmChatWidget">
-        <!-- Заголовок -->
+    <div class="bm-chat-widget" id="bmChatWidget" role="dialog" aria-label="Чат с Балтиком">
+        <!-- Шапка -->
         <div class="bm-chat-header">
-            <div>
-                <div class="bm-chat-title">Балтик • Цифровой снабженец</div>
-                <div class="bm-chat-status">Балт-Маркет • На связи</div>
+            <div class="bm-head-main">
+                <div class="bm-head-avatar">
+                    <img src="palych.jpg" alt="Балтик">
+                </div>
+                <div>
+                    <div class="bm-chat-title">Балтик · цифровой снабженец</div>
+                    <div class="bm-chat-status">
+                        <span class="bm-online-dot" id="bmOnlineDot"></span>
+                        <span id="bmStatusText">Балт-Маркет · на связи</span>
+                    </div>
+                </div>
             </div>
             <div class="bm-chat-controls">
-                <button class="bm-control-btn" onclick="BMChat.clearChat()" title="Очистить чат">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M6 7h12l-1.5 9c-.1.7-.8 1.2-1.5 1.2H9c-.7 0-1.4-.5-1.5-1.2L6 7zm3-3V3c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1h4v2H5V4h4zm-1 4v6h2V8H8zm4 0v6h2V8h-2z"/>
-                    </svg>
+                <button class="bm-control-btn" onclick="BMChat.clearChat()" title="Очистить чат" aria-label="Очистить чат">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.5 9c-.1.7-.8 1.2-1.5 1.2H9c-.7 0-1.4-.5-1.5-1.2L6 7zm3-3V3c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1h4v2H5V4h4zm-1 4v6h2V8H8zm4 0v6h2V8h-2z"/></svg>
                 </button>
-                <button class="bm-control-btn" onclick="BMChat.toggle()" title="Закрыть">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
+                <button class="bm-control-btn" onclick="BMChat.toggle()" title="Закрыть" aria-label="Закрыть чат">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
             </div>
         </div>
@@ -42,13 +43,12 @@
         <div class="bm-chat-messages" id="bmChatMessages">
             <div class="bm-message bot">
                 <div class="bm-message-content">
-                    Приветствую! Я Балтик, цифровой снабженец "Балт-Маркет"<br>
-                    <strong>ВАЖНО! Мы работаем только с юр/лицами!</strong><br><br>
+                    Приветствую! Я Балтик, цифровой снабженец «Балт-Маркет».<br>
+                    <strong>Важно: работаем только с юр/лицами и ИП.</strong><br><br>
                     Задайте вопрос или используйте команды:<br>
-                    <strong>/заявка</strong> - для запроса КП<br>
-                    <strong>/оператор</strong> - для связи с специалистом<br>
-                    <strong>/файл</strong> - чтобы прикрепить спецификацию
-                    
+                    <strong>/заявка</strong> — запрос КП<br>
+                    <strong>/оператор</strong> — связь со специалистом<br>
+                    <strong>/файл</strong> — прикрепить спецификацию
                 </div>
             </div>
         </div>
@@ -56,11 +56,7 @@
         <!-- Индикатор печати -->
         <div class="bm-typing-indicator" id="bmTypingIndicator">
             Балтик печатает
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
 
         <!-- Ввод -->
@@ -69,13 +65,14 @@
                 <textarea
                     class="bm-input-field"
                     id="bmMessageInput"
-                    placeholder="Введите ваш вопрос..."
+                    placeholder="Введите ваш вопрос…"
                     rows="1"
+                    aria-label="Сообщение"
                     onkeypress="BMChat.handleKeyPress(event)"
                     oninput="BMChat.autoResize(this)"
                 ></textarea>
-                <button class="bm-send-btn" onclick="BMChat.sendMessage()" id="bmSendBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <button class="bm-send-btn" onclick="BMChat.sendMessage()" id="bmSendBtn" aria-label="Отправить">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
                 </button>
@@ -84,13 +81,14 @@
 
         <!-- Горячие кнопки -->
         <div class="bm-hot-keys">
-            <button onclick="BMChat.sendQuickReply('Заявка', '/заявка')">заявка</button>
-            <button onclick="BMChat.sendQuickReply('Оператор', '/оператор')">оператор</button>
-            <button onclick="BMChat.sendQuickReply('Файл', '/файл')">файл</button>
+            <button onclick="BMChat.sendQuickReply('Заявка', '/заявка')">Заявка</button>
+            <button onclick="BMChat.sendQuickReply('Оператор', '/оператор')">Оператор</button>
+            <button onclick="BMChat.sendQuickReply('Файл', '/файл')">Файл</button>
         </div>
+
         <!-- Подпись -->
         <div class="bm-chat-footer">
-            Сделано в <a href="https://golubef.ru/?utm_source=chat_vidget&utm_medium=balt_market" target="_blank">Golubef AI</a>
+            Сделано в <a href="https://golubef.ru/?utm_source=chat_vidget&utm_medium=balt_market" target="_blank" rel="noopener">Golubef AI</a>
         </div>
     </div>
     <script src="script.js"></script>
